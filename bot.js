@@ -33,6 +33,8 @@ if (!tokens[botIndex]) {
 const token = tokens[botIndex];
 const audioFile = path.join(__dirname, `new${botIndex + 1}.mp3`);
 
+console.log(`[DEBUG] Bot ${botIndex + 1} process started (PID: ${process.pid})`);
+
 // Create Discord client
 const client = new Client({
   intents: [
@@ -42,6 +44,11 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates
   ]
 });
+
+console.log(`[DEBUG] Bot ${botIndex + 1} token defined: ${token ? 'YES' : 'NO'}`);
+if (token) {
+    console.log(`[DEBUG] Bot ${botIndex + 1} token length: ${token.length}`);
+}
 
 let voiceConnection = null;
 let audioPlayer = null;
