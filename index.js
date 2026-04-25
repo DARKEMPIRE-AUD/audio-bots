@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 const path = require('path');
@@ -32,12 +31,16 @@ const clients = [];
 // Start all bots in one process
 console.log('Starting Discord Multi-Bot Voice System (Single Process Mode)...');
 
+let tokensFound = 0;
 for (let i = 0; i < NUM_BOTS; i++) {
   const token = process.env[`BOT_TOKEN_${i}`];
   if (!token) {
-    console.error(`Token for Bot ${i + 1} (BOT_TOKEN_${i}) missing in Environment!`);
+    console.error(`[ERROR] Token for Bot ${i + 1} (BOT_TOKEN_${i}) missing!`);
     continue;
   }
+  tokensFound++;
+
+  console.log(`[DEBUG] Bot ${i + 1} found token, attempting login...`);
 
   const audioFile = path.join(__dirname, `new${i + 1}.mp3`);
   
@@ -60,8 +63,6 @@ for (let i = 0; i < NUM_BOTS; i++) {
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
     
-    // Commands: !join10, !st10, !sp10, !ds10
-    // Also support generic commands !join, !start, !stop, !leave
     const content = message.content.toLowerCase();
 
     if (content === '!join10' || content === '!join') {
@@ -105,6 +106,8 @@ for (let i = 0; i < NUM_BOTS; i++) {
   client.login(token).catch(err => console.error(`Bot ${i + 1} Login Failed:`, err));
   clients.push(client);
 }
+
+console.log(`Total bots scheduled for login: ${tokensFound}`);
 
 process.on('SIGINT', () => {
   clients.forEach(c => c.destroy());
