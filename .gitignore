@@ -6,5 +6,4 @@ node_modules/
 npm-debug.log*
 .pm2/
 dump.pm2
-# Audio files allowed for hosting
-# *.mp3 removed to allow upload
+*.mp3

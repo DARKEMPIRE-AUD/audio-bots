@@ -12,10 +12,6 @@
     "logs": "pm2 logs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines": {
-    "node": "20.x"
-  },
-
   "keywords": [
     "discord",
     "bot",
