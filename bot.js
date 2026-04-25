@@ -4,12 +4,18 @@ const { joinVoiceChannel, createAudioPlayer, createAudioResource } = require('@d
 const path = require('path');
 
 const botIndex = parseInt(process.argv[2]) || 0;
+console.log(`[DEBUG-CHILD] Bot ${botIndex + 1} process started with PID ${process.pid}`);
+
 const token = process.env[`BOT_TOKEN_${botIndex}`];
+console.log(`[DEBUG-CHILD] Bot ${botIndex + 1} Token Found: ${token ? 'YES' : 'NO'}`);
 
 if (!token) {
   console.error(`Token missing for bot ${botIndex + 1}`);
   process.exit(1);
 }
+
+console.log(`[DEBUG-CHILD] Bot ${botIndex + 1} attempting login...`);
+
 
 const audioFile = path.join(__dirname, `new${botIndex + 1}.mp3`);
 
