@@ -63,4 +63,11 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-client.login(token);
+console.log(`[DEBUG-CHILD] Bot ${botIndex + 1} waiting ${botIndex * 5.5} seconds to avoid Discord rate limit...`);
+
+setTimeout(() => {
+  console.log(`[DEBUG-CHILD] Bot ${botIndex + 1} calling client.login()...`);
+  client.login(token).catch(err => {
+    console.error(`[FATAL] Bot ${botIndex + 1} Login Failed:`, err.message);
+  });
+}, botIndex * 5500);
