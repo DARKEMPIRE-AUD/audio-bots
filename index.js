@@ -4,11 +4,22 @@ const http = require('http');
 
 // Simple health check server for hosting platforms (Koyeb, Render, etc.)
 const PORT = process.env.PORT || 8080;
+const appUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Bot is running\n');
 }).listen(PORT, () => {
   console.log(`Health check server listening on port ${PORT}`);
+  
+  // Keep-alive ping every 10 minutes
+  setInterval(() => {
+    http.get(appUrl, (res) => {
+      console.log('Self-ping successful');
+    }).on('error', (err) => {
+      console.error('Self-ping failed:', err.message);
+    });
+  }, 10 * 60 * 1000); // 10 minutes
 });
 
 // Number of bots
