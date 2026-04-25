@@ -1,5 +1,15 @@
 const { fork } = require('child_process');
 const path = require('path');
+const http = require('http');
+
+// Simple health check server for hosting platforms (Koyeb, Render, etc.)
+const PORT = process.env.PORT || 8080;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Bot is running\n');
+}).listen(PORT, () => {
+  console.log(`Health check server listening on port ${PORT}`);
+});
 
 // Number of bots
 const NUM_BOTS = 10;
