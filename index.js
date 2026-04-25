@@ -1,6 +1,8 @@
 const { fork } = require('child_process');
 const path = require('path');
 const http = require('http');
+require('dotenv').config();
+require('dotenv').config({ path: '.env.example' });
 
 // Simple health check server for hosting platforms (Koyeb, Render, etc.)
 const PORT = process.env.PORT || 10000;
@@ -25,6 +27,22 @@ http.createServer((req, res) => {
 
 // Number of bots
 const NUM_BOTS = 10;
+
+// Check if tokens are set
+console.log('Validating environment variables...');
+const missingTokens = [];
+for (let i = 0; i < NUM_BOTS; i++) {
+  if (!process.env[`BOT_TOKEN_${i}`]) {
+    missingTokens.push(`BOT_TOKEN_${i}`);
+  }
+}
+
+if (missingTokens.length > 0) {
+  console.warn(`\n[WARNING] The following environment variables are missing: ${missingTokens.join(', ')}`);
+  console.warn('The bots associated with these tokens will not be able to start.\n');
+} else {
+  console.log('[SUCCESS] All 10 bot tokens are present in environment.\n');
+}
 
 // Array to hold child processes
 const bots = [];
