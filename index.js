@@ -11,7 +11,7 @@ http.createServer((req, res) => {
   console.log(`Health check server listening on port ${PORT}`);
 });
 
-const NUM_BOTS = 10;
+const NUM_BOTS = 1;
 const bots = [];
 
 function startBot(index) {
