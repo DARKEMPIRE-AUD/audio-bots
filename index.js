@@ -14,7 +14,8 @@ http.createServer((req, res) => {
   
   // Keep-alive ping every 10 minutes
   setInterval(() => {
-    http.get(appUrl, (res) => {
+    const protocol = appUrl.startsWith('https') ? require('https') : require('http');
+    protocol.get(appUrl, (res) => {
       console.log('Self-ping successful');
     }).on('error', (err) => {
       console.error('Self-ping failed:', err.message);

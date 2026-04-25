@@ -47,7 +47,7 @@ let voiceConnection = null;
 let audioPlayer = null;
 
 // Bot ready event
-client.on('clientReady', () => {
+client.on('ready', () => {
   console.log(`Bot ${botIndex + 1} (${client.user.tag}) is ready!`);
 });
 
@@ -62,6 +62,9 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 // Message handler
 client.on('messageCreate', async (message) => {
+  // Simple log to see if the bot is receiving messages
+  console.log(`Bot ${botIndex + 1} received message: "${message.content}" from ${message.author.tag}`);
+
   if (message.author.bot) return;
 
   const member = message.member;
@@ -70,7 +73,9 @@ client.on('messageCreate', async (message) => {
   const voiceChannel = member.voice.channel;
 
   try {
-    if (message.content === '!join10') {
+    // Commands: !join, !start, !stop, !leave
+    // Or keep the '10' if the user specifically wants that, but usually !join is better for all bots
+    if (message.content === '!join' || message.content === '!join10') {
       if (!voiceChannel) {
         return message.reply('You must be in a voice channel to use this command.').catch(console.error);
       }
@@ -88,10 +93,11 @@ client.on('messageCreate', async (message) => {
       });
 
       console.log(`Bot ${botIndex + 1} joined voice channel: ${voiceChannel.name}`);
+      message.reply(`Bot ${botIndex + 1} joined!`).catch(console.error);
 
-    } else if (message.content === '!st10') {
+    } else if (message.content === '!start' || message.content === '!st10') {
       if (!voiceConnection) {
-        return message.reply(`Bot ${botIndex + 1} is not in a voice channel. Use !join10 first.`).catch(console.error);
+        return message.reply(`Bot ${botIndex + 1} is not in a voice channel. Use !join first.`).catch(console.error);
       }
 
       // Stop any existing playback
@@ -121,18 +127,20 @@ client.on('messageCreate', async (message) => {
         console.error(`Bot ${botIndex + 1} audio player error:`, error);
       });
 
-    } else if (message.content === '!sp10') {
+    } else if (message.content === '!stop' || message.content === '!sp10') {
       if (audioPlayer) {
         audioPlayer.stop();
         audioPlayer = null;
         console.log(`Bot ${botIndex + 1} stopped audio playback`);
+        message.reply(`Bot ${botIndex + 1} stopped.`).catch(console.error);
       }
 
-    } else if (message.content === '!ds10') {
+    } else if (message.content === '!leave' || message.content === '!ds10') {
       if (voiceConnection) {
         voiceConnection.destroy();
         voiceConnection = null;
         console.log(`Bot ${botIndex + 1} disconnected from voice channel`);
+        message.reply(`Bot ${botIndex + 1} left.`).catch(console.error);
       }
 
       if (audioPlayer) {
