@@ -28,9 +28,17 @@ const client = new Client({
   ]
 });
 
-client.on('ready', () => {
-  console.log(`Bot ${botIndex + 1} (${client.user.tag}) is ready!`);
+// Gateway Debug Logs
+client.on('debug', info => {
+  if (info.includes('Identify') || info.includes('Connect') || info.includes('Ready') || info.includes('Heartbeat')) {
+    console.log(`[GATEWAY-DEBUG] Bot ${botIndex + 1}: ${info.substring(0, 100)}`);
+  }
 });
+
+client.on('ready', () => {
+  console.log(`[SUCCESS] Bot ${botIndex + 1} (${client.user.tag}) is ready!`);
+});
+
 
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
