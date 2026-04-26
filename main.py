@@ -132,5 +132,6 @@ if __name__ == "__main__":
     except Exception as e:
         log_to_file(f"Fatal error: {e}")
     finally:
-        log_to_file("Application stopped. Waiting 10 seconds before exit to preserve logs...")
-        time.sleep(10)
+        log_to_file("Application stopped. Waiting indefinitely so you can read the logs...")
+        while True:
+            time.sleep(1)
