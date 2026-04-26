@@ -87,25 +87,33 @@ async def start_bots():
         if token:
             bot = MultiBot(bot_index=i, command_prefix="!", intents=intents)
             
-            # Create a wrapper coroutine to catch exceptions for individual bots
             async def run_bot(b, t, index):
                 try:
                     await b.start(t)
                 except Exception as e:
-                    print(f"Bot {index + 1} failed to start: {e}")
+                    print(f"Bot {index + 1} failed to start: {e}", flush=True)
                     
             tasks.append(run_bot(bot, token, i))
             bots.append(bot)
-            print(f"Initialized Bot {i + 1}")
+            print(f"Initialized Bot {i + 1}", flush=True)
         else:
-            print(f"Token for Bot {i} not found")
+            print(f"Token for Bot {i} not found", flush=True)
 
     if tasks:
-        print("Starting all bots...")
+        print("Starting all bots...", flush=True)
         await asyncio.gather(*tasks)
+    else:
+        print("No tasks to run. Exiting...", flush=True)
 
 if __name__ == "__main__":
     try:
+        print("Starting application...", flush=True)
         asyncio.run(start_bots())
     except KeyboardInterrupt:
-        print("Shutting down...")
+        print("Shutting down...", flush=True)
+    except Exception as e:
+        print(f"Fatal error: {e}", flush=True)
+    finally:
+        print("Application stopped. Waiting 10 seconds before exit to preserve logs...", flush=True)
+        import time
+        time.sleep(10)
