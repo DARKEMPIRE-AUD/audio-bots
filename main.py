@@ -12,12 +12,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Load environment variables
 load_dotenv()
 
-# Simple Flask server for Render health checks
 app = Flask(__name__)
+
+LOG_FILE = "bot.log"
+
+def log_to_file(msg):
+    with open(LOG_FILE, "a") as f:
+        f.write(msg + "\n")
+    print(msg, flush=True)
 
 @app.route('/')
 def home():
-    return "Bot is running"
+    try:
+        with open(LOG_FILE, "r") as f:
+            content = f.read()
+        return f"<pre>{content}</pre>"
+    except:
+        return "Log file not created yet."
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
@@ -38,7 +49,7 @@ class MultiBot(commands.Bot):
         self.voice_client = None
 
     async def on_ready(self):
-        print(f"Bot {self.bot_index + 1} ({self.user}) is ready!")
+        log_to_file(f"Bot {self.bot_index + 1} ({self.user}) is ready!")
         await self.change_presence(activity=discord.Game(name="pk vaa"))
 
     async def on_message(self, message):
@@ -52,7 +63,7 @@ class MultiBot(commands.Bot):
             if message.author.voice:
                 channel = message.author.voice.channel
                 self.voice_client = await channel.connect()
-                print(f"Bot {self.bot_index + 1} joined {channel.name}")
+                log_to_file(f"Bot {self.bot_index + 1} joined {channel.name}")
             else:
                 await message.channel.send(f"Bot {self.bot_index + 1}: You need to be in a voice channel!")
 
@@ -64,20 +75,20 @@ class MultiBot(commands.Bot):
                     
                     source = discord.FFmpegPCMAudio(self.audio_file)
                     self.voice_client.play(source)
-                    print(f"Bot {self.bot_index + 1} playing {self.audio_file}")
+                    log_to_file(f"Bot {self.bot_index + 1} playing {self.audio_file}")
                 else:
-                    print(f"Bot {self.bot_index + 1}: File {self.audio_file} not found")
+                    log_to_file(f"Bot {self.bot_index + 1}: File {self.audio_file} not found")
 
         elif content == "!sp10":
             if self.voice_client and self.voice_client.is_playing():
                 self.voice_client.stop()
-                print(f"Bot {self.bot_index + 1} stopped playback")
+                log_to_file(f"Bot {self.bot_index + 1} stopped playback")
 
         elif content == "!ds10":
             if self.voice_client and self.voice_client.is_connected():
                 await self.voice_client.disconnect()
                 self.voice_client = None
-                print(f"Bot {self.bot_index + 1} disconnected")
+                log_to_file(f"Bot {self.bot_index + 1} disconnected")
 
 async def start_bots():
     intents = discord.Intents.default()
@@ -94,29 +105,32 @@ async def start_bots():
                 try:
                     await b.start(t)
                 except Exception as e:
-                    print(f"Bot {index + 1} failed to start: {e}", flush=True)
+                    log_to_file(f"Bot {index + 1} failed to start: {e}")
                     
             tasks.append(run_bot(bot, token, i))
             bots.append(bot)
-            print(f"Initialized Bot {i + 1}", flush=True)
+            log_to_file(f"Initialized Bot {i + 1}")
         else:
-            print(f"Token for Bot {i} not found", flush=True)
+            log_to_file(f"Token for Bot {i} not found")
 
     if tasks:
-        print("Starting all bots...", flush=True)
+        log_to_file("Starting all bots...")
         await asyncio.gather(*tasks)
     else:
-        print("No tasks to run. Exiting...", flush=True)
+        log_to_file("No tasks to run. Exiting...")
 
 if __name__ == "__main__":
+    import time
     try:
-        print("Starting application...", flush=True)
+        # Clear the log file on startup
+        with open(LOG_FILE, "w") as f:
+            f.write("--- Starting application ---\n")
+        log_to_file("Starting application...")
         asyncio.run(start_bots())
     except KeyboardInterrupt:
-        print("Shutting down...", flush=True)
+        log_to_file("Shutting down...")
     except Exception as e:
-        print(f"Fatal error: {e}", flush=True)
+        log_to_file(f"Fatal error: {e}")
     finally:
-        print("Application stopped. Waiting 10 seconds before exit to preserve logs...", flush=True)
-        import time
+        log_to_file("Application stopped. Waiting 10 seconds before exit to preserve logs...")
         time.sleep(10)
