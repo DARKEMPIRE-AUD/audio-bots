@@ -103,6 +103,10 @@ async def start_bots():
             
             async def run_bot(b, t, index):
                 try:
+                    # Wait 6 seconds between each bot login to prevent Discord IP ban (Cloudflare Error 1015)
+                    if index > 0:
+                        log_to_file(f"Bot {index + 1} waiting {index * 6} seconds before login...")
+                    await asyncio.sleep(index * 6)
                     await b.start(t)
                 except Exception as e:
                     log_to_file(f"Bot {index + 1} failed to start: {e}")
