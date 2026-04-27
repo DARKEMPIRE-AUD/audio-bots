@@ -125,6 +125,15 @@ The system includes comprehensive error handling for:
 - Ensure bots are invited to your Discord server with proper permissions
 - Check PM2 logs: `npm run logs`
 
+### Render Deployment Notes
+- **Do not exclude audio files from deployment**: if `new1.mp3` ... `new10.mp3` are missing in the runtime container, bots will log audio-missing warnings and `!st10` will fail.
+- This project now includes startup tuning environment variables for low-resource hosts:
+  - `BOT_START_DELAY_MS` (default `5000` in production)
+  - `BOT_RESTART_DELAY_MS` (default `5000`)
+  - `BOT_MAX_RESTART_DELAY_MS` (default `60000`)
+  - `BOT_LOGIN_TIMEOUT_MS` (default `90000`)
+- On Render, set these in the service environment if you want to tune startup behavior further.
+
 ### Audio Not Playing
 - Verify audio files exist and are in the correct format (MP3)
 - Check FFmpeg installation

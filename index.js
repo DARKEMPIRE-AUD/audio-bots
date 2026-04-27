@@ -1,12 +1,15 @@
 const { fork } = require('child_process');
 const path = require('path');
 const http = require('http');
-require('dotenv').config();
-require('dotenv').config({ path: '.env.example' });
+require('dotenv').config({ quiet: true });
 
 // Simple health check server for hosting platforms (Koyeb, Render, etc.)
 const PORT = process.env.PORT || 10000;
 const appUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+const TOTAL_BOTS = 10;
+const BOT_START_DELAY_MS = Number(process.env.BOT_START_DELAY_MS || (process.env.NODE_ENV === 'production' ? 5000 : 1000));
+const BASE_RESTART_DELAY_MS = Number(process.env.BOT_RESTART_DELAY_MS || 5000);
+const MAX_RESTART_DELAY_MS = Number(process.env.BOT_MAX_RESTART_DELAY_MS || 60000);
 
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -25,31 +28,45 @@ http.createServer((req, res) => {
   }, 10 * 60 * 1000); // 10 minutes
 });
 
-// Number of bots
-const NUM_BOTS = 10;
-
 // Check if tokens are set
 console.log('Validating environment variables...');
+const allBotIndexes = Array.from({ length: TOTAL_BOTS }, (_, i) => i);
+const enabledBotIndexes = [];
 const missingTokens = [];
-for (let i = 0; i < NUM_BOTS; i++) {
+for (const i of allBotIndexes) {
   if (!process.env[`BOT_TOKEN_${i}`]) {
     missingTokens.push(`BOT_TOKEN_${i}`);
+  } else {
+    enabledBotIndexes.push(i);
   }
 }
 
 if (missingTokens.length > 0) {
   console.warn(`\n[WARNING] The following environment variables are missing: ${missingTokens.join(', ')}`);
-  console.warn('The bots associated with these tokens will not be able to start.\n');
+  console.warn('The bots associated with these tokens will be skipped.\n');
 } else {
-  console.log('[SUCCESS] All 10 bot tokens are present in environment.\n');
+  console.log(`[SUCCESS] All ${TOTAL_BOTS} bot tokens are present in environment.\n`);
 }
+
+if (enabledBotIndexes.length === 0) {
+  console.error('[FATAL] No valid BOT_TOKEN_* environment variables found. Exiting.');
+  process.exit(1);
+}
+
+console.log(`[INFO] ${enabledBotIndexes.length}/${TOTAL_BOTS} bots are configured and will be started.`);
 
 // Array to hold child processes
 const bots = [];
+const restartAttempts = new Map();
+let isShuttingDown = false;
 
 // Optimized bot spawning with better resource management
 function startBot(index) {
-  console.log(`[${index + 1}/10] Starting Bot ${index + 1}...`);
+  if (!process.env[`BOT_TOKEN_${index}`]) {
+    return;
+  }
+
+  console.log(`Starting Bot ${index + 1}...`);
 
   const botProcess = fork(path.join(__dirname, 'bot.js'), [index.toString()], {
     stdio: 'inherit',
@@ -61,10 +78,26 @@ function startBot(index) {
 
   botProcess.on('exit', (code, signal) => {
     console.warn(`Bot ${index + 1} exited with code ${code}, signal ${signal}`);
+    if (isShuttingDown) {
+      return;
+    }
+
     // Auto-restart with exponential backoff
     if (code !== 0 && code !== null) {
-      console.log(`Restarting Bot ${index + 1} in 3 seconds...`);
-      setTimeout(() => startBot(index), 3000);
+      const attempt = (restartAttempts.get(index) || 0) + 1;
+      restartAttempts.set(index, attempt);
+
+      const restartDelay = Math.min(
+        MAX_RESTART_DELAY_MS,
+        BASE_RESTART_DELAY_MS * Math.pow(2, attempt - 1)
+      );
+
+      console.log(
+        `Restarting Bot ${index + 1} in ${Math.round(restartDelay / 1000)} seconds (attempt ${attempt})...`
+      );
+      setTimeout(() => startBot(index), restartDelay);
+    } else {
+      restartAttempts.delete(index);
     }
   });
 
@@ -77,21 +110,22 @@ function startBot(index) {
 
 // Start all bots with minimal resource usage
 console.log('Starting Discord Multi-Bot Voice System (512MB total)...');
-let startedCount = 0;
-for (let i = 0; i < NUM_BOTS; i++) {
-  // Staggered startup: 300ms apart (faster, less resource spike)
+for (let i = 0; i < enabledBotIndexes.length; i++) {
+  const botIndex = enabledBotIndexes[i];
+  // Staggered startup to reduce Discord login timeouts on low-CPU hosts
   setTimeout(() => {
-    startBot(i);
-  }, i * 300);
+    startBot(botIndex);
+  }, i * BOT_START_DELAY_MS);
 }
 
 // Track startup completion
 setTimeout(() => {
-  console.log(`[SUCCESS] All 10 bots started. Avg ~51MB per bot. Press Ctrl+C to stop.`);
-}, NUM_BOTS * 300 + 5000);
+  console.log(`[SUCCESS] Startup sequence triggered for ${enabledBotIndexes.length} bot(s). Press Ctrl+C to stop.`);
+}, enabledBotIndexes.length * BOT_START_DELAY_MS + 5000);
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
+  isShuttingDown = true;
   console.log('\nShutting down all bots...');
   bots.forEach((bot, index) => {
     if (bot && !bot.killed) {
@@ -108,6 +142,7 @@ process.on('SIGINT', () => {
 });
 
 process.on('SIGTERM', () => {
+  isShuttingDown = true;
   console.log('\nShutting down all bots...');
   bots.forEach((bot, index) => {
     if (bot && !bot.killed) {
@@ -132,5 +167,3 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
-
-console.log(`All ${NUM_BOTS} bots started. Press Ctrl+C to stop.`);

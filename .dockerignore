@@ -7,7 +7,6 @@ npm-debug.log
 README.md
 .pm2
 dump.pm2
-*.mp3
 .DS_Store
 start-bots.bat
 test-token.js

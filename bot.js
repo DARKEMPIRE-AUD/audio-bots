@@ -1,8 +1,7 @@
-require('dotenv').config();
-require('dotenv').config({ path: '.env.example' });
+require('dotenv').config({ quiet: true });
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
-const { readFileSync } = require('fs');
+const { existsSync } = require('fs');
 const path = require('path');
 
 // Bot index and configuration
@@ -25,13 +24,11 @@ if (!tokens[botIndex]) {
 
 const token = tokens[botIndex];
 const audioFile = path.join(__dirname, `new${botIndex + 1}.mp3`);
+const audioExists = existsSync(audioFile);
+const LOGIN_TIMEOUT_MS = Number(process.env.BOT_LOGIN_TIMEOUT_MS || 90000);
 
-// Pre-cache audio buffer
-let audioBuffer = null;
-try {
-  audioBuffer = readFileSync(audioFile);
-} catch (e) {
-  console.warn(`Audio file not found: ${audioFile}`);
+if (!audioExists) {
+  console.warn(`[WARN] Bot ${botIndex + 1}: Audio file missing`);
 }
 
 // Create optimized Discord client
@@ -48,7 +45,7 @@ const client = new Client({
 const connections = new Map();
 let readyFlag = false;
 let commandCooldown = new Map();
-const COOLDOWN_MS = 300; // Reduced to 300ms for faster response
+const COOLDOWN_MS = 300;
 
 // Helper function to check if connection is still valid
 function isConnectionValid(connKey) {
@@ -167,6 +164,10 @@ client.on('messageCreate', async (message) => {
         return message.reply(`Bot ${botIndex + 1} not in channel! Use !join10 first!`).catch(() => {});
       }
 
+      if (!audioExists) {
+        return message.reply(`Audio file missing for bot ${botIndex + 1}.`).catch(() => {});
+      }
+
       try {
         // Stop existing player
         if (connection.player) {
@@ -180,11 +181,7 @@ client.on('messageCreate', async (message) => {
 
         let resource;
         try {
-          if (audioBuffer) {
-            resource = createAudioResource(audioBuffer, { inlineVolume: true });
-          } else {
-            resource = createAudioResource(audioFile, { inlineVolume: true });
-          }
+          resource = createAudioResource(audioFile, { inlineVolume: true });
         } catch (e) {
           return message.reply('Audio file error!').catch(() => {});
         }
@@ -240,9 +237,9 @@ client.on('messageCreate', async (message) => {
 
 // Fast login with timeout
 const loginTimeout = setTimeout(() => {
-  console.error(`Bot ${botIndex + 1} login timeout!`);
+  console.error(`Bot ${botIndex + 1} login timeout after ${Math.round(LOGIN_TIMEOUT_MS / 1000)}s!`);
   process.exit(1);
-}, 30000); // 30 second timeout
+}, LOGIN_TIMEOUT_MS);
 
 client.login(token).then(() => {
   clearTimeout(loginTimeout);
