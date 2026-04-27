@@ -44,11 +44,39 @@ const client = new Client({
   ]
 });
 
-// Connection cache
+// Connection cache with proper cleanup
 const connections = new Map();
 let readyFlag = false;
 let commandCooldown = new Map();
-const COOLDOWN_MS = 500; // 500ms cooldown per user
+const COOLDOWN_MS = 300; // Reduced to 300ms for faster response
+
+// Helper function to check if connection is still valid
+function isConnectionValid(connKey) {
+  const conn = connections.get(connKey);
+  if (!conn) return false;
+  
+  // Verify connection is still active
+  try {
+    return conn.conn && conn.conn.state && conn.conn.state.status !== 4; // 4 = destroyed
+  } catch (e) {
+    // Connection is dead, clean it up
+    connections.delete(connKey);
+    return false;
+  }
+}
+
+// Cleanup dead connections periodically
+setInterval(() => {
+  for (const [key, conn] of connections.entries()) {
+    if (!isConnectionValid(key)) {
+      try {
+        if (conn.player) conn.player.stop();
+        if (conn.conn) conn.conn.destroy();
+      } catch (e) {}
+      connections.delete(key);
+    }
+  }
+}, 10000); // Check every 10 seconds
 
 // Optimized ready event - runs only once
 let activitySet = false;
@@ -72,16 +100,17 @@ client.on('voiceStateUpdate', () => {
   // Optimized voice state handler
 });
 
-// Ultra-fast message handler with debouncing
+// Ultra-fast message handler with ghost connection fix
 client.on('messageCreate', async (message) => {
-  // Early returns for efficiency
   if (message.author.bot) return;
   if (!message.member) return;
 
   const userId = message.author.id;
   const guildId = message.guild?.id;
   
-  // Rate limiting - prevent spam
+  if (!guildId) return;
+
+  // Rate limiting
   const cooldownKey = `${guildId}-${userId}`;
   const now = Date.now();
   if (commandCooldown.has(cooldownKey)) {
@@ -95,89 +124,117 @@ client.on('messageCreate', async (message) => {
   const connKey = guildId;
 
   try {
-    // Command routing - optimized for speed
     if (cmd === '!join10') {
-      if (!voiceChannel) {
-        return message.reply('You must be in a voice channel!').catch(() => {});
-      }
-      if (connections.has(connKey)) {
+      // Check if already has valid connection
+      if (isConnectionValid(connKey)) {
         return message.reply(`Bot ${botIndex + 1} already in channel!`).catch(() => {});
       }
 
-      // Fast connection
-      const conn = joinVoiceChannel({
-        channelId: voiceChannel.id,
-        guildId: guildId,
-        adapterCreator: message.guild.voiceAdapterCreator,
-        selfMute: false,
-        selfDeaf: false
-      });
+      if (!voiceChannel) {
+        return message.reply('You must be in a voice channel!').catch(() => {});
+      }
 
-      connections.set(connKey, { conn, player: null });
-      console.log(`Bot ${botIndex + 1} joined: ${voiceChannel.name}`);
+      try {
+        // Create fresh connection
+        const conn = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: guildId,
+          adapterCreator: message.guild.voiceAdapterCreator,
+          selfMute: false,
+          selfDeaf: false
+        });
+
+        // Add destruction listener for cleanup
+        conn.on('stateChange', (oldState, newState) => {
+          if (newState.status === 4) { // Destroyed
+            connections.delete(connKey);
+            console.log(`Bot ${botIndex + 1} connection destroyed (auto cleanup)`);
+          }
+        });
+
+        connections.set(connKey, { conn, player: null });
+        console.log(`Bot ${botIndex + 1} joined: ${voiceChannel.name}`);
+      } catch (err) {
+        console.error(`Bot ${botIndex + 1} join error:`, err.message);
+        return message.reply(`Failed to join channel!`).catch(() => {});
+      }
 
     } else if (cmd === '!st10') {
       const connection = connections.get(connKey);
-      if (!connection) {
-        return message.reply(`Bot ${botIndex + 1} not in channel. Use !join10 first!`).catch(() => {});
+      if (!isConnectionValid(connKey)) {
+        // Clean up ghost connection
+        connections.delete(connKey);
+        return message.reply(`Bot ${botIndex + 1} not in channel! Use !join10 first!`).catch(() => {});
       }
 
-      // Stop existing player
-      if (connection.player) {
-        connection.player.stop();
-      }
-
-      // Create player with audio buffer
-      const player = createAudioPlayer();
-      connection.player = player;
-
-      // Fast resource creation from buffer
-      let resource;
       try {
-        if (audioBuffer) {
-          resource = createAudioResource(audioBuffer, { inlineVolume: true });
-        } else {
-          resource = createAudioResource(audioFile, { inlineVolume: true });
+        // Stop existing player
+        if (connection.player) {
+          connection.player.stop();
+          connection.player = null;
         }
-      } catch (e) {
-        return message.reply('Audio file error!').catch(() => {});
+
+        // Create new player
+        const player = createAudioPlayer();
+        connection.player = player;
+
+        let resource;
+        try {
+          if (audioBuffer) {
+            resource = createAudioResource(audioBuffer, { inlineVolume: true });
+          } else {
+            resource = createAudioResource(audioFile, { inlineVolume: true });
+          }
+        } catch (e) {
+          return message.reply('Audio file error!').catch(() => {});
+        }
+
+        // Play immediately
+        connection.conn.subscribe(player);
+        player.play(resource);
+
+        console.log(`Bot ${botIndex + 1} playing audio`);
+
+        // Single listener
+        player.removeAllListeners();
+        player.once(AudioPlayerStatus.Idle, () => {
+          console.log(`Bot ${botIndex + 1} finished`);
+        });
+
+        player.on('error', (error) => {
+          console.error(`Bot ${botIndex + 1} player error:`, error.message);
+        });
+      } catch (err) {
+        console.error(`Bot ${botIndex + 1} play error:`, err.message);
+        return message.reply('Play error!').catch(() => {});
       }
-
-      // Subscribe and play
-      connection.conn.subscribe(player);
-      player.play(resource);
-
-      console.log(`Bot ${botIndex + 1} playing audio`);
-
-      // Single listener per player - remove old listeners
-      player.removeAllListeners();
-      player.once(AudioPlayerStatus.Idle, () => {
-        console.log(`Bot ${botIndex + 1} finished`);
-      });
-
-      player.on('error', (error) => {
-        console.error(`Bot ${botIndex + 1} player error:`, error.message);
-      });
 
     } else if (cmd === '!sp10') {
       const connection = connections.get(connKey);
       if (connection?.player) {
         connection.player.stop();
+        connection.player = null;
         console.log(`Bot ${botIndex + 1} stopped`);
       }
 
     } else if (cmd === '!ds10') {
       const connection = connections.get(connKey);
       if (connection) {
-        if (connection.player) connection.player.stop();
-        connection.conn.destroy();
-        connections.delete(connKey);
-        console.log(`Bot ${botIndex + 1} disconnected`);
+        try {
+          if (connection.player) {
+            connection.player.stop();
+            connection.player = null;
+          }
+          connection.conn.destroy();
+          connections.delete(connKey);
+          console.log(`Bot ${botIndex + 1} disconnected`);
+        } catch (err) {
+          console.error(`Bot ${botIndex + 1} disconnect error:`, err.message);
+        }
       }
     }
   } catch (error) {
     console.error(`Bot ${botIndex + 1} error:`, error.message);
-    message.reply('Command error!').catch(() => {});
   }
 });
 

@@ -13,9 +13,10 @@ COPY . .
 
 # Set environment
 ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max-old-space-size=512
 
 # Expose port
 EXPOSE 10000
 
-# Start the app
+# Start the app with memory limit
 CMD ["node", "index.js"]

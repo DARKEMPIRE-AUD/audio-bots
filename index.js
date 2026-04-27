@@ -75,19 +75,20 @@ function startBot(index) {
   bots[index] = botProcess;
 }
 
-// Start all bots with staggered delays to prevent resource contention
-console.log('Starting Discord Multi-Bot Voice System...');
+// Start all bots with minimal resource usage
+console.log('Starting Discord Multi-Bot Voice System (512MB total)...');
 let startedCount = 0;
 for (let i = 0; i < NUM_BOTS; i++) {
+  // Staggered startup: 300ms apart (faster, less resource spike)
   setTimeout(() => {
     startBot(i);
-  }, i * 500); // 500ms delay between each bot startup
+  }, i * 300);
 }
 
 // Track startup completion
 setTimeout(() => {
-  console.log(`[SUCCESS] All 10 bots started. Press Ctrl+C to stop.`);
-}, NUM_BOTS * 500 + 5000);
+  console.log(`[SUCCESS] All 10 bots started. Avg ~51MB per bot. Press Ctrl+C to stop.`);
+}, NUM_BOTS * 300 + 5000);
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {

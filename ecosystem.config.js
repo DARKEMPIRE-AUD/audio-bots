@@ -7,14 +7,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -24,14 +24,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -41,14 +41,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -58,14 +58,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -75,14 +75,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -92,14 +92,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -109,14 +109,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -126,14 +126,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -143,14 +143,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     },
     {
@@ -160,14 +160,14 @@ module.exports = {
       instances: 1,
       autorestart: true,
       watch: false,
-      max_memory_restart: '512M',
+      max_memory_restart: '90M',
       exec_mode: 'fork',
       merge_logs: true,
       error_file: '/dev/null',
       out_file: '/dev/null',
       env: {
         NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=512'
+        NODE_OPTIONS: '--max-old-space-size=75'
       }
     }
   ]
