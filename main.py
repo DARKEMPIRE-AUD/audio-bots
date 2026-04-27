@@ -62,8 +62,15 @@ class MultiBot(commands.Bot):
         if content == "!join10":
             if message.author.voice:
                 channel = message.author.voice.channel
-                self.voice_client = await channel.connect()
-                log_to_file(f"Bot {self.bot_index + 1} joined {channel.name}")
+                # Stagger voice channel joins by 2 seconds per bot to avoid Discord Voice Server block (1006/Timeout)
+                if self.bot_index > 0:
+                    await asyncio.sleep(self.bot_index * 2)
+                
+                try:
+                    self.voice_client = await channel.connect(timeout=20.0)
+                    log_to_file(f"Bot {self.bot_index + 1} joined {channel.name}")
+                except Exception as e:
+                    log_to_file(f"Bot {self.bot_index + 1} failed to join voice: {e}")
             else:
                 await message.channel.send(f"Bot {self.bot_index + 1}: You need to be in a voice channel!")
 
@@ -73,9 +80,16 @@ class MultiBot(commands.Bot):
                     if self.voice_client.is_playing():
                         self.voice_client.stop()
                     
-                    source = discord.FFmpegPCMAudio(self.audio_file)
-                    self.voice_client.play(source)
-                    log_to_file(f"Bot {self.bot_index + 1} playing {self.audio_file}")
+                    # Stagger playback starts by 1 second
+                    if self.bot_index > 0:
+                        await asyncio.sleep(self.bot_index * 1)
+                    
+                    try:
+                        source = discord.FFmpegPCMAudio(self.audio_file)
+                        self.voice_client.play(source)
+                        log_to_file(f"Bot {self.bot_index + 1} playing {self.audio_file}")
+                    except Exception as e:
+                        log_to_file(f"Bot {self.bot_index + 1} failed to play audio: {e}")
                 else:
                     log_to_file(f"Bot {self.bot_index + 1}: File {self.audio_file} not found")
 
