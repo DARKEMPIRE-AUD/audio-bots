@@ -4,7 +4,8 @@
   "description": "Discord multi-bot voice system with separate processes",
   "main": "bot.js",
   "scripts": {
-    "start": "pm2 start ecosystem.config.js",
+    "start": "node index.js",
+    "start:pm2": "pm2 start ecosystem.config.js",
     "start:node": "node index.js",
     "stop": "pm2 stop ecosystem.config.js",
     "restart": "pm2 restart ecosystem.config.js",

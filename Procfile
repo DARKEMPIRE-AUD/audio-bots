@@ -1,1 +1,1 @@
-web: pm2 start ecosystem.config.js --no-daemon
+web: node index.js
