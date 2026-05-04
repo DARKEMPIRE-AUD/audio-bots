@@ -2,6 +2,16 @@ require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel, createAudioPlayer, createAudioResource, NoSubscriberBehavior } = require('@discordjs/voice');
 const path = require('path');
+const http = require('http');
+
+// Dummy web server to satisfy Render's port binding requirement for Web Services
+const port = process.env.PORT || 10000;
+http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Discord Multi-Bot System is running!\n');
+}).listen(port, () => {
+    console.log(`Web server listening on port ${port} to keep Render happy.`);
+});
 
 let tokens = (process.env.TOKENS || '').split(',').map(t => t.trim()).filter(Boolean);
 
